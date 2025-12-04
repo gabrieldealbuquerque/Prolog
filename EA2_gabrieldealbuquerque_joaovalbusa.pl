@@ -1,4 +1,4 @@
-:- module(ea2_games, [jogo/5, jogo_multiplataforma/2, desenvolvedora_prolifica/2, autopublicado/2, concorrentes_mesmo_genero/3, generos_por_plataforma/3, exclusivo/2, parceria_forte/3, ranking_generos/1]).
+:- module(ea2_games, [jogo/5, jogo_multiplataforma/2, desenvolvedora_prolifica/2, autopublicado/2, concorrentes_mesmo_genero/3, generos_por_plataforma/3, exclusivo/2, parceria_forte/3, ranking_generos/1, jogos_generos/1]).
 
 :- use_module(library(semweb/rdf_db)).
 :- use_module(library(semweb/sparql_client)).
@@ -46,7 +46,7 @@
 
 % Predicado base que mapeia os dados da DBpedia para fatos Prolog
 jogo(Nome, Genero, Dev, Pub, Plat) :-
-    distinct([Nome, Genero, Dev, Pub, Plat],
+    distinct([Nome],
         dbpedia_games{
             nome:Nome, 
             genero:Genero, 
@@ -87,7 +87,7 @@ jogo_multiplataforma(Nome, Plataformas) :-
 % Fechada: ?- desenvolvedora_prolifica("Rockstar North", Total).
 % Fechada: ?- desenvolvedora_prolifica("Capcom", _).
 % -----------------------------------------------------------------------
-desenvolvedora_prolifica(Dev, Total) :-
+desenvolvedora_prolifica(Dev, Total)  :-
     distinct(Dev, jogo(_, _, Dev, _, _)),
     aggregate_all(count, distinct(J, jogo(J, _, Dev, _, _)), Total),
     Total > 3.
@@ -131,7 +131,7 @@ concorrentes_mesmo_genero(Jogo1, Jogo2, Genero) :-
 % -----------------------------------------------------------------------
 % Regra 5: Catálogo da Plataforma
 % Lista todos os gêneros disponíveis para uma determinada plataforma.
-%
+%Action
 % Exemplos de Consultas:
 % Aberta:  ?- generos_por_plataforma(Plat, Generos, Total).
 % Aberta:  ?- generos_por_plataforma(P, _, 10).
@@ -199,3 +199,26 @@ ranking_generos(ListaOrdenada) :-
     ),
     % Ordena pela Quantidade (primeiro elemento do par) de forma decrescente
     sort(1, @>=, Pares, ListaOrdenada).
+
+% -----------------------------------------------------------------------
+% Regra 9: Jogos por Gênero
+% Lista todos os jogos pertencentes a um gênero, ordenados alfabeticamente,
+% junto com a quantidade total.
+%
+% Exemplos:
+% ?- jogos_generos("Real-time strategy").
+% ?- jogos_generos(G).
+% -----------------------------------------------------------------------
+jogos_generos(Genero) :-
+    findall(Nome,
+        (
+            jogo(Nome, G, _, _, _),
+            G = Genero
+        ),
+        ListaRepetidos
+    ),
+    sort(ListaRepetidos, Lista),  % remove duplicatas de Nome
+    length(Lista, Total),
+    writeln(Lista),
+    writeln(total:Total).
+
